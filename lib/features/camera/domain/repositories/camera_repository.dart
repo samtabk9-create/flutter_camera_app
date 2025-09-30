@@ -1,13 +1,16 @@
+import 'dart:ui';
+
+import 'package:camera/camera.dart' as camera;
 import 'package:dartz/dartz.dart';
-import 'package:camera/camera.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../entities/camera_settings.dart';
 import '../entities/photo.dart';
 
 abstract class CameraRepository {
-  Future<Either<Failure, List<CameraDescription>>> getAvailableCameras();
-  Future<Either<Failure, CameraController>> initializeCamera(CameraDescription camera);
+  Future<Either<Failure, List<camera.CameraDescription>>> getAvailableCameras();
+  Future<Either<Failure, camera.CameraController>> initializeCamera(
+      camera.CameraDescription camera);
   Future<Either<Failure, Photo>> capturePhoto(CameraSettings settings);
   Future<Either<Failure, void>> switchCamera();
   Future<Either<Failure, void>> setZoomLevel(double zoomLevel);

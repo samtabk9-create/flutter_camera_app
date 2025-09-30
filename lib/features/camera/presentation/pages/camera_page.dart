@@ -25,8 +25,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
-    // Initialize camera when page loads
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CameraBloc>().add(const InitializeCameraEvent());
     });
@@ -41,7 +40,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final cameraBloc = context.read<CameraBloc>();
-    
+
     if (state == AppLifecycleState.inactive) {
       cameraBloc.add(const DisposeCameraEvent());
     } else if (state == AppLifecycleState.resumed) {
@@ -83,12 +82,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         builder: (context, state) {
           return Stack(
             children: [
-              // Camera Preview
               Positioned.fill(
                 child: _buildCameraPreview(state),
               ),
-              
-              // Top Controls
               Positioned(
                 top: MediaQuery.of(context).padding.top + 16,
                 left: 16,
@@ -98,8 +94,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                   onGalleryTap: () => context.go('/gallery'),
                 ),
               ),
-              
-              // Mode Selector
               if (state is CameraReady)
                 Positioned(
                   bottom: 120,
@@ -115,8 +109,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     },
                   ),
                 ),
-              
-              // Bottom Controls
               Positioned(
                 bottom: MediaQuery.of(context).padding.bottom + 16,
                 left: 0,
@@ -129,11 +121,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     context.read<CameraBloc>().add(const SwitchCameraEvent());
                   },
                   onToggleManualControls: _toggleManualControls,
-                  isCapturing: state is CameraCapturing,
+                  isCapturing: state is CameraReady && state.isCapturing,
                 ),
               ),
-              
-              // Manual Controls Drawer
               if (_showManualControls && state is CameraReady)
                 Positioned(
                   bottom: 0,
@@ -161,13 +151,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
       );
-    } else if (state is CameraReady || state is CameraCapturing || state is CameraPhotoTaken) {
-      final controller = state is CameraReady 
+    } else if (state is CameraReady || state is CameraPhotoTaken) {
+      final controller = state is CameraReady
           ? state.controller
-          : state is CameraCapturing 
-              ? state.controller
-              : (state as CameraPhotoTaken).controller;
-              
+          : (state as CameraPhotoTaken).controller;
+
       return CameraPreviewWidget(
         controller: controller,
         onTap: (point) {
@@ -245,7 +233,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         ),
       );
     }
-    
+
     return const Center(
       child: CircularProgressIndicator(color: Colors.white),
     );

@@ -1,22 +1,13 @@
-import 'package:equatable/equatable.dart';
-import 'package:camera/camera.dart';
-
 import '../../domain/entities/camera_settings.dart';
 
-abstract class CameraEvent extends Equatable {
+abstract class CameraEvent {
   const CameraEvent();
-
-  @override
-  List<Object?> get props => [];
 }
 
 class InitializeCameraEvent extends CameraEvent {
-  final CameraDescription? camera;
+  final dynamic camera;
 
   const InitializeCameraEvent({this.camera});
-
-  @override
-  List<Object?> get props => [camera];
 }
 
 class CapturePhotoEvent extends CameraEvent {
@@ -31,45 +22,30 @@ class UpdateCameraSettingsEvent extends CameraEvent {
   final CameraSettings settings;
 
   const UpdateCameraSettingsEvent(this.settings);
-
-  @override
-  List<Object> get props => [settings];
 }
 
 class SetZoomLevelEvent extends CameraEvent {
   final double zoomLevel;
 
   const SetZoomLevelEvent(this.zoomLevel);
-
-  @override
-  List<Object> get props => [zoomLevel];
 }
 
 class SetFlashModeEvent extends CameraEvent {
-  final FlashMode flashMode;
+  final dynamic flashMode;
 
   const SetFlashModeEvent(this.flashMode);
-
-  @override
-  List<Object> get props => [flashMode];
 }
 
 class SetFocusPointEvent extends CameraEvent {
-  final Offset point;
+  final dynamic point;
 
   const SetFocusPointEvent(this.point);
-
-  @override
-  List<Object> get props => [point];
 }
 
 class SetExposurePointEvent extends CameraEvent {
-  final Offset point;
+  final dynamic point;
 
   const SetExposurePointEvent(this.point);
-
-  @override
-  List<Object> get props => [point];
 }
 
 class LoadCameraSettingsEvent extends CameraEvent {

@@ -1,8 +1,10 @@
-import 'package:dartz/dartz.dart';
-import 'package:camera/camera.dart';
+import 'dart:ui';
 
+import 'package:camera/camera.dart' as camera;
+import 'package:dartz/dartz.dart';
+
+import '../../../../core/errors/exceptions.dart' as exceptions;
 import '../../../../core/errors/failures.dart';
-import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/camera_settings.dart';
 import '../../domain/entities/photo.dart';
@@ -12,9 +14,9 @@ import '../datasources/camera_local_datasource.dart';
 class CameraRepositoryImpl implements CameraRepository {
   final CameraLocalDataSource localDataSource;
   final NetworkInfo networkInfo;
-  
-  CameraController? _currentController;
-  List<CameraDescription>? _availableCameras;
+
+  camera.CameraController? _currentController;
+  List<camera.CameraDescription>? _availableCameras;
   int _currentCameraIndex = 0;
 
   CameraRepositoryImpl({
@@ -23,11 +25,11 @@ class CameraRepositoryImpl implements CameraRepository {
   });
 
   @override
-  Future<Either<Failure, List<CameraDescription>>> getAvailableCameras() async {
+  Future<Either<Failure, List<camera.CameraDescription>>> getAvailableCameras() async {
     try {
       _availableCameras = await localDataSource.getAvailableCameras();
       return Right(_availableCameras!);
-    } on CameraException catch (e) {
+    } on exceptions.CameraException catch (e) {
       return Left(CameraFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -35,14 +37,14 @@ class CameraRepositoryImpl implements CameraRepository {
   }
 
   @override
-  Future<Either<Failure, CameraController>> initializeCamera(CameraDescription camera) async {
+  Future<Either<Failure, camera.CameraController>> initializeCamera(
+      camera.CameraDescription camera) async {
     try {
-      // Dispose previous controller if exists
       await _currentController?.dispose();
-      
+
       _currentController = await localDataSource.initializeCamera(camera);
       return Right(_currentController!);
-    } on CameraException catch (e) {
+    } on exceptions.CameraException catch (e) {
       return Left(CameraFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -57,14 +59,13 @@ class CameraRepositoryImpl implements CameraRepository {
       }
 
       final photo = await localDataSource.capturePhoto(_currentController!, settings);
-      
-      // Save settings for next use
+
       await localDataSource.saveCameraSettings(settings);
-      
+
       return Right(photo);
-    } on CameraException catch (e) {
+    } on exceptions.CameraException catch (e) {
       return Left(CameraFailure(e.message));
-    } on StorageException catch (e) {
+    } on exceptions.StorageException catch (e) {
       return Left(StorageFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -82,10 +83,9 @@ class CameraRepositoryImpl implements CameraRepository {
         return const Left(CameraFailure('No other cameras available'));
       }
 
-      // Switch to next camera
       _currentCameraIndex = (_currentCameraIndex + 1) % _availableCameras!.length;
       final nextCamera = _availableCameras![_currentCameraIndex];
-      
+
       final result = await initializeCamera(nextCamera);
       return result.fold(
         (failure) => Left(failure),
@@ -117,7 +117,6 @@ class CameraRepositoryImpl implements CameraRepository {
         return const Left(CameraFailure('Camera is not initialized'));
       }
 
-      // Convert our FlashMode to camera FlashMode
       late camera.FlashMode cameraFlashMode;
       switch (flashMode) {
         case FlashMode.off:
@@ -174,7 +173,7 @@ class CameraRepositoryImpl implements CameraRepository {
     try {
       final settings = await localDataSource.getCameraSettings();
       return Right(settings);
-    } on StorageException catch (e) {
+    } on exceptions.StorageException catch (e) {
       return Left(StorageFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -186,7 +185,7 @@ class CameraRepositoryImpl implements CameraRepository {
     try {
       await localDataSource.saveCameraSettings(settings);
       return const Right(null);
-    } on StorageException catch (e) {
+    } on exceptions.StorageException catch (e) {
       return Left(StorageFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -195,8 +194,6 @@ class CameraRepositoryImpl implements CameraRepository {
 
   @override
   Stream<CameraSettings> watchCameraSettings() async* {
-    // For now, just yield the current settings
-    // In a real implementation, you might use a StreamController
     final result = await getCameraSettings();
     yield result.fold(
       (failure) => const CameraSettings(),

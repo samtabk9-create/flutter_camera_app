@@ -74,6 +74,7 @@ class ManualControlsWidget extends StatelessWidget {
                 children: [
                   // ISO Control
                   _buildSliderControl(
+                    context: context,
                     label: 'ISO',
                     value: settings.iso.toDouble(),
                     min: AppConstants.minISO.toDouble(),
@@ -89,6 +90,7 @@ class ManualControlsWidget extends StatelessWidget {
                   
                   // Shutter Speed Control
                   _buildSliderControl(
+                    context: context,
                     label: 'Shutter Speed',
                     value: _shutterSpeedToSliderValue(settings.shutterSpeed),
                     min: 0,
@@ -105,6 +107,7 @@ class ManualControlsWidget extends StatelessWidget {
                   
                   // Focus Distance Control
                   _buildSliderControl(
+                    context: context,
                     label: 'Focus',
                     value: settings.focusDistance,
                     min: 0.0,
@@ -122,6 +125,7 @@ class ManualControlsWidget extends StatelessWidget {
                   
                   // Exposure Compensation Control
                   _buildSliderControl(
+                    context: context,
                     label: 'Exposure',
                     value: settings.exposureCompensation,
                     min: -3.0,
@@ -179,6 +183,7 @@ class ManualControlsWidget extends StatelessWidget {
   }
 
   Widget _buildSliderControl({
+    required BuildContext context,
     required String label,
     required double value,
     required double min,

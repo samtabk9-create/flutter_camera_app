@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/exceptions.dart' as exceptions;
 import '../models/camera_settings_model.dart';
 import '../../domain/entities/photo.dart';
 import '../../domain/entities/camera_settings.dart';
@@ -34,7 +34,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
     try {
       return await availableCameras();
     } catch (e) {
-      throw CameraException('Failed to get available cameras: $e');
+      throw exceptions.CameraException('Failed to get available cameras: $e');
     }
   }
 
@@ -51,7 +51,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
       await controller.initialize();
       return controller;
     } catch (e) {
-      throw CameraException('Failed to initialize camera: $e');
+      throw exceptions.CameraException('Failed to initialize camera: $e');
     }
   }
 
@@ -59,7 +59,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
   Future<Photo> capturePhoto(CameraController controller, CameraSettings settings) async {
     try {
       if (!controller.value.isInitialized) {
-        throw CameraException('Camera is not initialized');
+        throw exceptions.CameraException('Camera is not initialized');
       }
 
       // Capture the image
@@ -94,7 +94,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
 
       return photo;
     } catch (e) {
-      throw CameraException('Failed to capture photo: $e');
+      throw exceptions.CameraException('Failed to capture photo: $e');
     }
   }
 
@@ -114,7 +114,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
       
       return filePath;
     } catch (e) {
-      throw StorageException('Failed to save image: $e');
+      throw exceptions.StorageException('Failed to save image: $e');
     }
   }
 
@@ -127,7 +127,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
         settingsModel.toJsonString(),
       );
     } catch (e) {
-      throw StorageException('Failed to save camera settings: $e');
+      throw exceptions.StorageException('Failed to save camera settings: $e');
     }
   }
 
@@ -140,7 +140,7 @@ class CameraLocalDataSourceImpl implements CameraLocalDataSource {
       }
       return const CameraSettings(); // Return default settings
     } catch (e) {
-      throw StorageException('Failed to get camera settings: $e');
+      throw exceptions.StorageException('Failed to get camera settings: $e');
     }
   }
 }

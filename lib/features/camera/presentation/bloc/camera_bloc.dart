@@ -1,26 +1,28 @@
 import 'dart:async';
+
+import 'package:camera/camera.dart' as camera;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/utils/usecase.dart';
-import '../../domain/entities/camera_settings.dart';
-import '../../domain/usecases/initialize_camera.dart';
-import '../../domain/usecases/capture_photo.dart';
-import '../../domain/usecases/switch_camera.dart';
+import '../../domain/entities/camera_settings.dart' as app_settings;
 import '../../domain/repositories/camera_repository.dart';
+import '../../domain/usecases/capture_photo.dart' as usecase;
+import '../../domain/usecases/initialize_camera.dart' as usecase;
+import '../../domain/usecases/switch_camera.dart' as usecase;
 import 'camera_event.dart';
 import 'camera_state.dart';
 
 class CameraBloc extends Bloc<CameraEvent, CameraState> {
-  final InitializeCamera initializeCamera;
-  final CapturePhoto capturePhoto;
-  final SwitchCamera switchCamera;
+  final usecase.InitializeCamera initializeCamera;
+  final usecase.CapturePhoto capturePhoto;
+  final usecase.SwitchCamera switchCamera;
   final CameraRepository repository;
 
-  List<CameraDescription> _availableCameras = [];
+  List<camera.CameraDescription> _availableCameras = [];
   int _currentCameraIndex = 0;
-  CameraSettings _currentSettings = const CameraSettings();
+  app_settings.CameraSettings _currentSettings =
+      const app_settings.CameraSettings();
 
   CameraBloc({
     required this.initializeCamera,
@@ -47,7 +49,6 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     emit(const CameraLoading());
 
     try {
-      // Check camera permission
       final cameraPermission = await Permission.camera.status;
       if (cameraPermission.isDenied) {
         final result = await Permission.camera.request();
@@ -57,7 +58,6 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
         }
       }
 
-      // Get available cameras
       final camerasResult = await repository.getAvailableCameras();
       await camerasResult.fold(
         (failure) async {
@@ -65,16 +65,14 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
         },
         (cameras) async {
           _availableCameras = cameras;
-          
-          // Use provided camera or default to first available
+
           final cameraToUse = event.camera ?? cameras.first;
           _currentCameraIndex = cameras.indexOf(cameraToUse);
-          
-          // Initialize camera
+
           final controllerResult = await initializeCamera(
-            InitializeCameraParams(camera: cameraToUse),
+            usecase.InitializeCameraParams(camera: cameraToUse),
           );
-          
+
           controllerResult.fold(
             (failure) => emit(CameraError(message: failure.message)),
             (controller) {
@@ -100,13 +98,10 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     if (state is! CameraReady) return;
 
     final currentState = state as CameraReady;
-    emit(CameraCapturing(
-      controller: currentState.controller,
-      settings: currentState.settings,
-    ));
+    emit(currentState.copyWith(isCapturing: true));
 
     final result = await capturePhoto(_currentSettings);
-    
+
     result.fold(
       (failure) => emit(CameraError(
         message: failure.message,
@@ -119,8 +114,7 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
           controller: currentState.controller,
           settings: currentState.settings,
         ));
-        
-        // Return to ready state after a brief moment
+
         Timer(const Duration(milliseconds: 1000), () {
           if (!isClosed) {
             add(const LoadCameraSettingsEvent());
@@ -140,7 +134,7 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     emit(const CameraLoading());
 
     final result = await switchCamera(const NoParams());
-    
+
     result.fold(
       (failure) => emit(CameraError(
         message: failure.message,
@@ -148,10 +142,10 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
         settings: currentState.settings,
       )),
       (_) {
-        _currentCameraIndex = (_currentCameraIndex + 1) % _availableCameras.length;
-        // The repository should have updated the controller
-        // We need to get the new controller from the repository
-        add(InitializeCameraEvent(camera: _availableCameras[_currentCameraIndex]));
+        _currentCameraIndex =
+            (_currentCameraIndex + 1) % _availableCameras.length;
+        add(InitializeCameraEvent(
+            camera: _availableCameras[_currentCameraIndex]));
       },
     );
   }
@@ -165,7 +159,6 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     final currentState = state as CameraReady;
     _currentSettings = event.settings;
 
-    // Update repository settings
     await repository.updateCameraSettings(event.settings);
 
     emit(currentState.copyWith(settings: event.settings));
@@ -178,7 +171,7 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     if (state is! CameraReady) return;
 
     final result = await repository.setZoomLevel(event.zoomLevel);
-    
+
     result.fold(
       (failure) {
         final currentState = state as CameraReady;
@@ -189,7 +182,8 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
         ));
       },
       (_) {
-        final updatedSettings = _currentSettings.copyWith(zoomLevel: event.zoomLevel);
+        final updatedSettings =
+            _currentSettings.copyWith(zoomLevel: event.zoomLevel);
         add(UpdateCameraSettingsEvent(updatedSettings));
       },
     );
@@ -202,7 +196,7 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     if (state is! CameraReady) return;
 
     final result = await repository.setFlashMode(event.flashMode);
-    
+
     result.fold(
       (failure) {
         final currentState = state as CameraReady;
@@ -213,7 +207,8 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
         ));
       },
       (_) {
-        final updatedSettings = _currentSettings.copyWith(flashMode: event.flashMode);
+        final updatedSettings =
+            _currentSettings.copyWith(flashMode: event.flashMode);
         add(UpdateCameraSettingsEvent(updatedSettings));
       },
     );
@@ -242,11 +237,10 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     Emitter<CameraState> emit,
   ) async {
     final result = await repository.getCameraSettings();
-    
+
     result.fold(
       (failure) {
-        // Use default settings if loading fails
-        _currentSettings = const CameraSettings();
+        _currentSettings = const app_settings.CameraSettings();
       },
       (settings) {
         _currentSettings = settings;

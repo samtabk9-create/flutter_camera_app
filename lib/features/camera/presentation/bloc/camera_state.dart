@@ -24,43 +24,40 @@ class CameraReady extends CameraState {
   final CameraSettings settings;
   final List<CameraDescription> availableCameras;
   final int currentCameraIndex;
+  final bool isCapturing;
 
   const CameraReady({
     required this.controller,
     required this.settings,
     required this.availableCameras,
     this.currentCameraIndex = 0,
+    this.isCapturing = false,
   });
 
   @override
-  List<Object> get props => [controller, settings, availableCameras, currentCameraIndex];
+  List<Object> get props => [
+        controller,
+        settings,
+        availableCameras,
+        currentCameraIndex,
+        isCapturing,
+      ];
 
   CameraReady copyWith({
     CameraController? controller,
     CameraSettings? settings,
     List<CameraDescription>? availableCameras,
     int? currentCameraIndex,
+    bool? isCapturing,
   }) {
     return CameraReady(
       controller: controller ?? this.controller,
       settings: settings ?? this.settings,
       availableCameras: availableCameras ?? this.availableCameras,
       currentCameraIndex: currentCameraIndex ?? this.currentCameraIndex,
+      isCapturing: isCapturing ?? this.isCapturing,
     );
   }
-}
-
-class CameraCapturing extends CameraState {
-  final CameraController controller;
-  final CameraSettings settings;
-
-  const CameraCapturing({
-    required this.controller,
-    required this.settings,
-  });
-
-  @override
-  List<Object> get props => [controller, settings];
 }
 
 class CameraPhotoTaken extends CameraState {
